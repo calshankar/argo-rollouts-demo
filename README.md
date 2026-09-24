@@ -42,5 +42,5 @@ kubectl argo rollouts promote rollouts-demo
 ## Important Notes
 
 - **Please change the Ingress Host parameter and configmap in k6_dep.yaml file to target the Ingress endpoint in your cluster**
-- **Analysis templates uses the Prometheus svc endpoint available inside VIDP cluster**
+- **Analysis templates uses the Prometheus svc endpoint available inside your kubernetes cluster**
 - **Pending Task**: Convert the manifest into Helm chart
