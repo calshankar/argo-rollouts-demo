@@ -1,0 +1,101 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: rollouts-poc
+  namespace: rollouts-poc
+spec:
+  replicas: 5
+  strategy:
+    canary:
+      canaryService: rollouts-poc-canary
+      stableService: rollouts-poc-stable
+      trafficRouting:
+        nginx:
+          stableIngress: rollouts-poc-stable
+      # metadata which will be attached to the Canary pods
+      canaryMetadata:
+        annotations:
+          argorollouts.kubernetes.io/identifier: rollouts-canary
+      # metadata which will be attached to the stable pods
+      stableMetadata:
+        annotations:
+          argorollouts.kubernetes.io/identifier: rollouts-stable
+      analysis:
+        templates:
+        - templateName: success-rate-analysis
+        startingStep: 2
+        args:
+        - name: ingress-name
+          value: rollouts-poc-stable
+      steps:
+      - setWeight: 20
+      - pause: {duration: 5m}
+      - setWeight: 40
+      - analysis:
+          templates:
+          - templateName: latency-analysis
+          args:
+          - name: ingress-name
+            value: rollouts-poc-stable
+      - setWeight: 60
+      - pause: {duration: 3m}
+      - setWeight: 80
+      - pause: {duration: 5m}
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: rollouts-poc
+  template:
+    metadata:
+      labels:
+        app: rollouts-poc
+    spec:
+      containers:
+      - name: rollouts-poc-stable
+        image: argoproj/rollouts-demo:blue
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        resources:
+          requests:
+            memory: 32Mi
+            cpu: 5m
+        env:
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: rollouts-poc-config
+              key: log_level
+        - name: FEATURE_FLAGS
+          valueFrom:
+            configMapKeyRef:
+              name: rollouts-poc-config
+              key: feature_flags
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: rollouts-poc-secrets
+              key: db_username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: rollouts-poc-secrets
+              key: db_password
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/config
+        - name: secrets-volume
+          mountPath: /app/secrets
+          readOnly: true
+      volumes:
+      - name: config-volume
+        configMap:
+          name: rollouts-poc-config
+      - name: secrets-volume
+        secret:
+          secretName: rollouts-poc-secrets
+      tolerations:
+        - effect: NoSchedule
+          key: vidp
+          value: "true"

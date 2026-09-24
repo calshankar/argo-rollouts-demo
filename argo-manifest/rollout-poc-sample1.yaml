@@ -1,0 +1,17 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: rollouts-poc
+  namespace: vidp-argocd
+spec:
+  destination:
+    namespace: rollouts-poc
+    server: https://kubernetes.default.svc
+  project: default
+  sources:
+    - repoURL: https://github.com/Vonage/argo-rollouts-demo.git
+      path: apps/rollouts-poc
+      targetRevision: HEAD
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true

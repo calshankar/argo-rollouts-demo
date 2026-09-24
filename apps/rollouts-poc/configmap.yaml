@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rollouts-poc-config
+  namespace: rollouts-poc
+data:
+  log_level: "info"
+  feature_flags: |
+    {
+      "enable_dark_mode": true,
+      "enable_beta_features": false,
+      "cache_timeout_seconds": 300
+    }
+  app-config.properties: |
+    server.port=8080
+    server.compression.enabled=true
+    metrics.enabled=true
+    health.path=/health
+    api.rate_limit=100
